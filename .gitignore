@@ -1,0 +1,7 @@
+CHANGELOG.md
+.logs/
+.latch/
+.vscode/
+.git
+**/__pycache__
+.latch_report.tar.gz

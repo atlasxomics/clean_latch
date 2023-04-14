@@ -1,0 +1,124 @@
+"""
+"""
+
+from wf.cleaning_task import cleaning_task
+
+from latch import workflow
+from latch.resources.launch_plan import LaunchPlan
+from latch.types import (
+    LatchAuthor,
+    LatchFile,
+    LatchMetadata,
+    LatchOutputDir,
+    LatchParameter,
+    LatchRule
+)
+
+metadata = LatchMetadata(
+    display_name="clean",
+    author=LatchAuthor(
+        name="James McGann",
+        email="jpaulmcgann@gmail.com",
+        github="https://github.com/jpmcga",
+    ),
+    repository="https://github.com/jpmcga/clean_latch",
+    license="MIT",
+    parameters={
+        "run_id": LatchParameter(
+            display_name="run id",
+            description="ATX Run ID with optional prefix, default to \
+                        Dxxxxx_NGxxxxx format.",
+            batch_table_column=True,
+            placeholder="Dxxxxx_NGxxxxx",
+            rules=[
+                LatchRule(
+                    regex="^[^/].*",
+                    message="run id cannot start with a '/'"
+                ),
+            ]
+        ),
+        "output_dir": LatchParameter(
+            display_name="output directory",
+            description="Name of Latch subdirectory for downloaded file; files \
+                will be saved to /cleaned/{output directory}.",
+            batch_table_column=True,
+        ),
+        "singlecell_file": LatchParameter(
+            display_name="singlecell file",
+            description="singlecell.csv file from cellranger output.",
+            batch_table_column=True,
+        ),
+        "positions_file": LatchParameter(
+            display_name="positions file",
+            description="tissue_positions_list.csv file from spatial folder, \
+                denoting on/off-tissue tixels.",
+            batch_table_column=True, 
+        ),
+        "fragments_file": LatchParameter(
+            display_name="fragments file",
+            description="fragments.tsv.gz file from cellranger output",
+            batch_table_column=True, 
+        ),
+        "deviations": LatchParameter(
+            display_name="standard deviations",
+            description="Number from standard deviations above the mean above \
+            which row/column medians will be considered outliers.",
+            batch_table_column=True, 
+        ),
+    },
+    tags=[],
+
+)
+@workflow(metadata)
+def clean_workflow(
+    run_id: str,
+    output_dir: str,
+    singlecell_file: LatchFile,
+    positions_file: LatchFile,
+    fragments_file: LatchFile,
+    deviations: int=1,
+) -> LatchFile:
+    """Workflow for normalizing hot rows and columns in spatial ATAC-seq data
+    Clean high fragment counts in spatial ATAC-seq data
+    ----
+    Latch workflow for remediating lane artifacts in spatial ATAC-seq 
+    experiments, specifically for data generated via DBiT-seq (see Deng, 2022).
+
+    
+    
+    Files are saved in the specified output directory in latch:///cleaned/<outdir>.
+
+    FTP will download recursively with url format:
+    ```
+    ftp://user:password@host:port/
+    ```
+    Providing full url will download recurively for directories, once for files.
+
+    Tested with ftp and https downloads; interally just calling
+    ```
+    wget -c  -r <link> -P <output>
+    ```
+    so idk should work with most download urls.
+    """
+    
+    return cleaning_task(
+        run_id=run_id,
+        output_dir=output_dir,
+        singlecell_file=singlecell_file,
+        positions_file=positions_file,
+        fragments_file=fragments_file,
+        deviations=deviations
+    )
+
+LaunchPlan(
+    clean_workflow,
+    "test data",
+    {
+        "run_id" : "ds_D01033_NG01681",
+        "output_dir" : "ds_D01033_NG01681",
+        "singlecell_file" : LatchFile("latch:///cr_outs/ds_D01033_NG01681/outs/ds_D01033_NG01681_singlecell.csv"),
+        "positions_file" : LatchFile("latch:///position_files/D01033/test.csv"),
+        "fragments_file" : LatchFile("latch:///cr_outs/ds_D01033_NG01681/outs/ds_D01033_NG01681_fragments.tsv.gz"),
+        "deviations" : 1,
+    },
+)
