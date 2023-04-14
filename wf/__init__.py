@@ -1,4 +1,4 @@
-"""
+"""Latch workflow for normalizing hot rows and columns in spatial ATAC-seq data
 """
 
 from wf.cleaning_task import cleaning_task
@@ -79,26 +79,21 @@ def clean_workflow(
     deviations: int=1,
 ) -> LatchFile:
     """Workflow for normalizing hot rows and columns in spatial ATAC-seq data
-    Clean high fragment counts in spatial ATAC-seq data
-    ----
+
+    ## Clean high fragment couns in spatial ATAC-seq data
+
     Latch workflow for remediating lane artifacts in spatial ATAC-seq 
-    experiments, specifically for data generated via DBiT-seq (see Deng, 2022).
+    experiments, specifically for data generated via DBiT-seq
+    (see [Deng, 2022](https://www.nature.com/articles/s41586-022-05094-1)).
 
+   Workflow takes the following outputs from Cellragnger ATAC,
+    - fragments.tsv.gz
+    - singlecell.csv
+
+    and returns a 'cleaned' fragments.tsv.gz where hot row/columns are downsampled to be <br>
+    within x standard deviations of the mean of row/column medians.
     
-    
-    Files are saved in the specified output directory in latch:///cleaned/<outdir>.
-
-    FTP will download recursively with url format:
-    ```
-    ftp://user:password@host:port/
-    ```
-    Providing full url will download recurively for directories, once for files.
-
-    Tested with ftp and https downloads; interally just calling
-    ```
-    wget -c  -r <link> -P <output>
-    ```
-    so idk should work with most download urls.
+    Output can be used for analysis with ArchR, Seurat, and other scATAC-seq packages. 
     """
     
     return cleaning_task(
