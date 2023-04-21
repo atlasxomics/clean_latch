@@ -1,7 +1,7 @@
 import subprocess
 
 from latch import large_task
-from latch.types import LatchFile, LatchOutputDir
+from latch.types import LatchFile
 
 @large_task
 def cleaning_task(
@@ -23,9 +23,29 @@ def cleaning_task(
         str(deviations),
     ]
 
+    print("cleaning...")
     subprocess.run(_r_cmd)
+    out_table = f"{run_id}_fragments.tsv"
 
-    out_file = f"cleaned_{run_id}_fragments.tsv.gz"
+    _sort_cmd = [
+        "sort",
+        "-k1,1V",
+        "-k2,2n",
+        out_table
+    ]
+    
+    print("sorting...")
+    subprocess.run(_sort_cmd, stdout=open(f"cleaned_{out_table}", "w"))
+
+    _zip_cmd = [
+        "bgzip",
+        f"cleaned_{out_table}" 
+    ]
+
+    print("zipping...")
+    subprocess.run(_zip_cmd)
+    out_file = f"cleaned_{out_table}.gz"
+
     local_location = f"/root/{out_file}"
     remote_location = f"latch:///cleaned/{output_dir}/{out_file}"
 

@@ -9,7 +9,6 @@ from latch.types import (
     LatchAuthor,
     LatchFile,
     LatchMetadata,
-    LatchOutputDir,
     LatchParameter,
     LatchRule
 )
@@ -90,10 +89,15 @@ def clean_workflow(
     - fragments.tsv.gz
     - singlecell.csv
 
-    and returns a 'cleaned' fragments.tsv.gz where hot row/columns are downsampled to be <br>
-    within x standard deviations of the mean of row/column medians.
+    and returns a 'cleaned' fragments.tsv.gz where hot row/columns are 
+    downsampled to be within x standard deviations of the mean of row/column
+    medians.
+
+    Output table is sorted for continuous chromosome blocks, and compressed
+    with gbzip for ArchR.
     
-    Output can be used for analysis with ArchR, Seurat, and other scATAC-seq packages. 
+    Output can be used for analysis with ArchR, Seurat, and other scATAC-seq
+    packages.
     """
     
     return cleaning_task(

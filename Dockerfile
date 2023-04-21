@@ -9,6 +9,9 @@ RUN apt-get update -y && \
         r-base-dev \
         r-cran-devtools 
 
+# Install tabix for bgzip command
+RUN apt-get install -y tabix
+
 RUN R -e "install.packages(c('dplyr'))"
 
 # STOP HERE:

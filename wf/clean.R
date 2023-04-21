@@ -139,7 +139,7 @@ cleaned <- clean_fragments(fragments_path, reduct_table)
 
 write.table(
   cleaned,
-  gzfile(paste0("/root/cleaned_", run_id, "_fragments.tsv.gz")),
+  paste0("/root/", run_id, "_fragments.tsv"),
   sep = "\t",
   quote = FALSE,
   row.names = FALSE,
