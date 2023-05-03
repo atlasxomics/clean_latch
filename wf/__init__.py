@@ -33,7 +33,7 @@ metadata = LatchMetadata(
                 LatchRule(
                     regex="^[^/].*",
                     message="run id cannot start with a '/'"
-                ),
+                )
             ]
         ),
         "output_dir": LatchParameter(
@@ -41,6 +41,12 @@ metadata = LatchMetadata(
             description="Name of Latch subdirectory for downloaded file; files \
                 will be saved to /cleaned/{output directory}.",
             batch_table_column=True,
+            rules=[
+                LatchRule(
+                    regex="^[^/].*",
+                    message="output directory name cannot start with a '/'"
+                )
+            ]
         ),
         "singlecell_file": LatchParameter(
             display_name="singlecell file",
