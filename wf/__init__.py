@@ -73,7 +73,8 @@ metadata = LatchMetadata(
         ),
         "table_id": LatchParameter(
             display_name="Registry Table ID",
-            description="Provide the ID of the Registry table. The cleaned fragment file will be populated in the table once the workflow finishes."
+            description="Provide the ID of the Registry table. The cleaned fragment file will be populated in the table once the workflow finishes. (e.g. 390)",
+            placeholder="390"
         )
     },
     tags=[],
@@ -87,7 +88,7 @@ def clean_workflow(
     positions_file: LatchFile,
     fragments_file: LatchFile,
     deviations: int=1,
-    table_id: str="390"
+    table_id: str = "390"
 ) -> LatchFile:
     """Workflow for normalizing hot rows and columns in spatial ATAC-seq data
 
