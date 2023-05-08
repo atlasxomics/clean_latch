@@ -2,6 +2,7 @@
 """
 
 from wf.cleaning_task import cleaning_task
+from wf.upload_registry_task import upload_registry_task
 
 from latch import workflow
 from latch.resources.launch_plan import LaunchPlan
@@ -106,7 +107,7 @@ def clean_workflow(
     packages.
     """
     
-    return cleaning_task(
+    cleaned_fragment_file = cleaning_task(
         run_id=run_id,
         output_dir=output_dir,
         singlecell_file=singlecell_file,
@@ -114,6 +115,10 @@ def clean_workflow(
         fragments_file=fragments_file,
         deviations=deviations
     )
+
+    upload_registry_task(run_id=run_id, cleaned_fragment_file=cleaned_fragment_file)
+
+    return cleaned_fragment_file
 
 LaunchPlan(
     clean_workflow,
