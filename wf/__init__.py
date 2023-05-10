@@ -71,6 +71,11 @@ metadata = LatchMetadata(
             which row/column medians will be considered outliers.",
             batch_table_column=True, 
         ),
+        "table_id": LatchParameter(
+            display_name="Registry Table ID",
+            description="Provide the ID of the Registry table. The cleaned fragment file will be populated in the table once the workflow finishes. (e.g. 390)",
+            placeholder="390"
+        )
     },
     tags=[],
 
@@ -83,6 +88,7 @@ def clean_workflow(
     positions_file: LatchFile,
     fragments_file: LatchFile,
     deviations: int=1,
+    table_id: str = "390"
 ) -> LatchFile:
     """Workflow for normalizing hot rows and columns in spatial ATAC-seq data
 
@@ -116,7 +122,11 @@ def clean_workflow(
         deviations=deviations
     )
 
-    upload_registry_task(run_id=run_id, cleaned_fragment_file=cleaned_fragment_file)
+    upload_registry_task(
+        run_id=run_id, 
+        cleaned_fragment_file=cleaned_fragment_file, 
+        table_id=table_id
+    )
 
     return cleaned_fragment_file
 
