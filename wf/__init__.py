@@ -132,12 +132,12 @@ def clean_workflow(
 
 LaunchPlan(
     clean_workflow,
-    "test data",
+    "default",
     {
         "run_id" : "ds_D01033_NG01681",
         "output_dir" : "ds_D01033_NG01681",
         "singlecell_file" : LatchFile("latch:///cr_outs/ds_D01033_NG01681/outs/ds_D01033_NG01681_singlecell.csv"),
-        "positions_file" : LatchFile("latch:///position_files/D01033/test.csv"),
+        "positions_file" : LatchFile("latch:///spatials/default/tissue_positions_list.csv"),
         "fragments_file" : LatchFile("latch:///cr_outs/ds_D01033_NG01681/outs/ds_D01033_NG01681_fragments.tsv.gz"),
         "deviations" : 1,
     },
