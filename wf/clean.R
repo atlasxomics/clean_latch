@@ -69,6 +69,49 @@ get_reductions <- function(
   r_table <- singlecell[, c("V1", "adjust")]
 }
 
+get_diag_reductions <- function(singlecell, deviations) {
+  # Return reduction table for diagonal if median of diagonal counts an outlier
+  # compared to either rows or columns.
+
+  row_medians <- aggregate(
+    singlecell$passed_filters,
+    by = list(Category = singlecell[, "V3"]),
+    FUN = median
+  )
+
+  col_medians <- aggregate(
+    singlecell$passed_filters,
+    by = list(Category = singlecell[, "V4"]),
+    FUN = median
+  )
+
+  # calculate the mean and standard deviation of the medians
+  rows_mean <- mean(row_medians$x)
+  cols_mean <- mean(col_medians$x) 
+  
+  rows_sd <- sd(row_medians$x)
+  cols_sd <- sd(col_medians$x)
+  
+  # identify limit more than x standard deviations above mean 
+  rows_limit <- rows_mean + deviation * rows_sd
+  cols_limit <- cols_mean + deviation * cols_sd 
+  
+  # create table with only diagonal tixels from singlecell table
+  diag_sc <- subset(singlecell, singlecell$V3 == singlecell$V4)
+  diag_mean <- mean(diag_sc$passed_filters)
+  
+  # create 'adjust' column with reads to downsample to
+  if (diag_mean > rows_limit) {
+    diag_sc$adjust <- ceiling(diag_sc$passed_filters * (rows_mean / diag_mean))
+  } else if (diagonal > cols_limit) {
+    diag_sc$adjust <- ceiling(diag_sc$passed_filters * (cols_mean / diag_mean))
+  } else {
+    diag_sc$adjust <- diag_sc$passed_filters
+  }
+  
+  return(diag_sc[, c('V1', 'adjust')])
+}
+
 combine_tables <- function(
   singlecell,
   deviations = 1,
@@ -89,7 +132,7 @@ combine_tables <- function(
     combined_table$adjust,
     by = list(combined_table$V1),
     FUN = mean
-    )
+  )
 
   colnames(combined_table) <- c("barcode", "adjust")
   return(combined_table)
