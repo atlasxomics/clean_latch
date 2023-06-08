@@ -93,19 +93,21 @@ get_diag_reductions <- function(singlecell, deviations) {
   cols_sd <- sd(col_medians$x)
   
   # identify limit more than x standard deviations above mean 
-  rows_limit <- rows_mean + deviation * rows_sd
-  cols_limit <- cols_mean + deviation * cols_sd 
+  rows_limit <- rows_mean + deviations * rows_sd
+  cols_limit <- cols_mean + deviations * cols_sd 
   
   # create table with only diagonal tixels from singlecell table
   diag_sc <- subset(singlecell, singlecell$V3 == singlecell$V4)
   diag_mean <- mean(diag_sc$passed_filters)
   
-  # create 'adjust' column with reads to downsample to
+  # create 'adjust' column with reads to downsample
   if (diag_mean > rows_limit) {
     diag_sc$adjust <- ceiling(diag_sc$passed_filters * (rows_mean / diag_mean))
-  } else if (diagonal > cols_limit) {
+  }
+  else if (diagonal > cols_limit) {
     diag_sc$adjust <- ceiling(diag_sc$passed_filters * (cols_mean / diag_mean))
-  } else {
+  } 
+  else {
     diag_sc$adjust <- diag_sc$passed_filters
   }
   
@@ -119,13 +121,12 @@ combine_tables <- function(
   col_id = "V4"
 ) {
 
-  tables <- list()
-  for (id in c(row_id, col_id)) {
-    table <- get_reductions(singlecell, id, deviations)
-    tables[[length(tables) + 1]] <- table
-  }
+  row_reductions  <- get_reductions(singlecell, row_id, deviations)
+  col_reductions  <- get_reductions(singlecell, col_id, deviations)
+  diag_reductions <- get_diag_reductions(singlecell, deviations)
+
   # concat rows and columns
-  combined_table <- bind_rows(tables[[1]], tables[[2]])
+  combined_table <- bind_rows(row_reductions, col_reductions, diag_reductions)
 
   # If a tixel occurs twice, take the average value
   combined_table <- aggregate(
