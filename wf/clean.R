@@ -69,6 +69,51 @@ get_reductions <- function(
   r_table <- singlecell[, c("V1", "adjust")]
 }
 
+get_diag_reductions <- function(singlecell, deviations) {
+  # Return reduction table for diagonal if median of diagonal counts an outlier
+  # compared to either rows or columns.
+
+  row_medians <- aggregate(
+    singlecell$passed_filters,
+    by = list(Category = singlecell[, "V3"]),
+    FUN = median
+  )
+
+  col_medians <- aggregate(
+    singlecell$passed_filters,
+    by = list(Category = singlecell[, "V4"]),
+    FUN = median
+  )
+
+  # calculate the mean and standard deviation of the medians
+  rows_mean <- mean(row_medians$x)
+  cols_mean <- mean(col_medians$x) 
+  
+  rows_sd <- sd(row_medians$x)
+  cols_sd <- sd(col_medians$x)
+  
+  # identify limit more than x standard deviations above mean 
+  rows_limit <- rows_mean + deviations * rows_sd
+  cols_limit <- cols_mean + deviations * cols_sd 
+  
+  # create table with only diagonal tixels from singlecell table
+  diag_sc <- subset(singlecell, singlecell$V3 == singlecell$V4)
+  diag_mean <- mean(diag_sc$passed_filters)
+  
+  # create 'adjust' column with reads to downsample
+  if (diag_mean > rows_limit) {
+    diag_sc$adjust <- ceiling(diag_sc$passed_filters * (rows_mean / diag_mean))
+  }
+  else if (diagonal > cols_limit) {
+    diag_sc$adjust <- ceiling(diag_sc$passed_filters * (cols_mean / diag_mean))
+  } 
+  else {
+    diag_sc$adjust <- diag_sc$passed_filters
+  }
+  
+  return(diag_sc[, c('V1', 'adjust')])
+}
+
 combine_tables <- function(
   singlecell,
   deviations = 1,
@@ -76,20 +121,19 @@ combine_tables <- function(
   col_id = "V4"
 ) {
 
-  tables <- list()
-  for (id in c(row_id, col_id)) {
-    table <- get_reductions(singlecell, id, deviations)
-    tables[[length(tables) + 1]] <- table
-  }
+  row_reductions  <- get_reductions(singlecell, row_id, deviations)
+  col_reductions  <- get_reductions(singlecell, col_id, deviations)
+  diag_reductions <- get_diag_reductions(singlecell, deviations)
+
   # concat rows and columns
-  combined_table <- bind_rows(tables[[1]], tables[[2]])
+  combined_table <- bind_rows(row_reductions, col_reductions, diag_reductions)
 
   # If a tixel occurs twice, take the average value
   combined_table <- aggregate(
     combined_table$adjust,
     by = list(combined_table$V1),
     FUN = mean
-    )
+  )
 
   colnames(combined_table) <- c("barcode", "adjust")
   return(combined_table)
