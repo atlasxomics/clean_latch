@@ -104,7 +104,7 @@ get_diag_reductions <- function(singlecell, deviations) {
   if (diag_mean > rows_limit) {
     diag_sc$adjust <- ceiling(diag_sc$passed_filters * (rows_mean / diag_mean))
   }
-  else if (diagonal > cols_limit) {
+  else if (diag_mean > cols_limit) {
     diag_sc$adjust <- ceiling(diag_sc$passed_filters * (cols_mean / diag_mean))
   } 
   else {
