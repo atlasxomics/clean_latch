@@ -142,3 +142,13 @@ LaunchPlan(
         "deviations" : 1,
     },
 )
+
+if __name__ == "__main__":
+   cleaning_task(
+        run_id="D01236_NG02457",
+        output_dir="D01236_NG02457_test",
+        singlecell_file=LatchFile("latch:///cr_outs/D01236_NG02457/outs/D01236_NG02457_singlecell.csv"),
+        positions_file=LatchFile("latch:///spatials/D1236/spatial/tissue_positions_list.csv"),
+        fragments_file=LatchFile("latch:///cr_outs/D01236_NG02457/outs/D01236_NG02457_fragments.tsv.gz"),
+        deviations=1
+    ) 

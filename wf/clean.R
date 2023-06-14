@@ -155,19 +155,23 @@ clean_fragments <- function(fragments_path, r_table) {
   # To each df in the list, randomly downsample if in reduction list
   print("Downsampling....")
   df_list_cleaned <- lapply(df_list, function(df) {
-
+    
     barcode <- unique(df$V4)
 
     if (barcode %in% bc_list) {
       n <- r_table[r_table$barcode == barcode, ]$adjust
-      df <- sample_n(df, n)
+      nfrags <- nrow(df)
+      if (nfrags > n) {
+        df <- sample_n(df, n)
+      } else {
+        df <- df
+      }
     } else {
       df <- df
     }
     return(df)
   }
   )
-
   # Combine the filtered data frames into a single data frame
   fragments_cleaned <- do.call(rbind, df_list_cleaned)
   rownames(fragments_cleaned) <- NULL
