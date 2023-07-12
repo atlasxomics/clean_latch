@@ -17,11 +17,11 @@ from latch.types import (
 metadata = LatchMetadata(
     display_name="clean",
     author=LatchAuthor(
-        name="James McGann",
-        email="jpaulmcgann@gmail.com",
-        github="https://github.com/jpmcga",
+        name="AtlasXomics Inc.",
+        email="jamesm@atlasxomics.com",
+        github="https://github.com/atlasxomics",
     ),
-    repository="https://github.com/jpmcga/clean_latch",
+    repository="https://github.com/atlasxomics/clean_latch",
     license="MIT",
     parameters={
         "run_id": LatchParameter(
