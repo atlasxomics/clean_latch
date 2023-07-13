@@ -55,8 +55,8 @@ if __name__ == "__main__":
     cleaning_task(
         run_id="ds_D01033_NG01681",
         output_dir="ds_D01033_NG01681",
-        singlecell_file=LatchFile("latch:///cr_outs/ds_D01033_NG01681/outs/ds_D01033_NG01681_singlecell.csv"),
-        positions_file=LatchFile("latch:///position_files/D01033/test.csv"),
-        fragments_file=LatchFile("latch:///cr_outs/ds_D01033_NG01681/outs/ds_D01033_NG01681_fragments.tsv.gz"),
+        singlecell_file = LatchFile("latch://13502.account/atac_outs/ds_D01033_NG01681/outs/ds_D01033_NG01681_singlecell.csv"),
+        positions_file = LatchFile("latch://13502.account/spatials/demo/spatial/tissue_positions_list.csv"),
+        fragments_file = LatchFile("latch://13502.account/ataciouts/ds_D01033_NG01681/outs/ds_D01033_NG01681_fragments.tsv.gz"),
         deviations=1,        
         )
