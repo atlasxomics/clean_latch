@@ -165,8 +165,8 @@ def clean_fragments(fragments_path, r_table):
 
 args = [i for i in sys.argv]
 
-singlecell = filter_sc(args[2], args[3])
-reduct_dict = combine_tables(singlecell, deviations=args[5])
-cleaned = clean_fragments(args[4], reduct_dict)
+singlecell = filter_sc(args[1], args[2])
+reduct_dict = combine_tables(singlecell, deviations=args[4])
+cleaned = clean_fragments(args[3], reduct_dict)
 
-cleaned.to_csv("/root/{}_fragments.tsv".format(args[1]), sep='\t', index=False, header=False)
+cleaned.to_csv("/root/{}_fragments.tsv".format(args[0]), sep='\t', index=False, header=False)
