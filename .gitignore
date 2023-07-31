@@ -5,3 +5,4 @@ CHANGELOG.md
 .git
 **/__pycache__
 .latch_report.tar.gz
+.DS_Store
