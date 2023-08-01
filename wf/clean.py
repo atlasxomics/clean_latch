@@ -1,11 +1,12 @@
-import pandas as pd
-import numpy as np
-import sys
-import string
-import statistics
 import gzip
+import numpy as np
+import pandas as pd
+import statistics
+import string
+import sys
 
-def averageDuplicates(big_list):
+
+def average_duplicates(big_list: List[str]) -> List(str):
   barcodes_match = {}
   final = {}
   ee = []
@@ -23,19 +24,20 @@ def averageDuplicates(big_list):
   return final
 
 def filter_sc(singlecell_path, position_path):
-  # reformat data, remove headers, apply custom column names for dataframes, add -1 to positions
-  # remove off tixels
-    singlecell = pd.read_csv(singlecell_path, header=[0,1])
-    singlecell = pd.DataFrame(singlecell[:].values)
-    
-    singlecell.columns = ['barcode', 'total', 'duplicate', 'chimeric', 'unmapped',	'lowmapq', 'mitochondrial',	'nonprimary',	'passed_filters',	'is__cell_barcode',	'excluded_reason',	'TSS_fragments',	'DNase_sensitive_region_fragments',	'enhancer_region_fragments', 'promoter_region_fragments', 'on_target_fragments', 'blacklist_region_fragments', 'peak_region_fragments', 'peak_region_cutsites']
-    positions = pd.read_csv(position_path, header=None)
-    positions.columns = ['barcode', 'on_off', 'row', 'col', 'y', 'x']
-    add_value = positions.loc[:,'barcode'].apply(lambda x: x + "-1")
-    positions['barcode'] = add_value
-    merged = pd.merge(positions.astype(object), singlecell.astype(object), how ='outer', on = 'barcode')
-    final_value = merged[merged['on_off'] == 1]
-    return final_value
+  """ reformat data, remove headers, apply custom column names for
+  dataframes, add -1 to positions, remove off tixels
+  """
+  singlecell = pd.read_csv(singlecell_path, header=[0,1])
+  singlecell = pd.DataFrame(singlecell[:].values)
+  
+  singlecell.columns = ['barcode', 'total', 'duplicate', 'chimeric', 'unmapped',	'lowmapq', 'mitochondrial',	'nonprimary',	'passed_filters',	'is__cell_barcode',	'excluded_reason',	'TSS_fragments',	'DNase_sensitive_region_fragments',	'enhancer_region_fragments', 'promoter_region_fragments', 'on_target_fragments', 'blacklist_region_fragments', 'peak_region_fragments', 'peak_region_cutsites']
+  positions = pd.read_csv(position_path, header=None)
+  positions.columns = ['barcode', 'on_off', 'row', 'col', 'y', 'x']
+  add_value = positions.loc[:,'barcode'].apply(lambda x: x + "-1")
+  positions['barcode'] = add_value
+  merged = pd.merge(positions.astype(object), singlecell.astype(object), how ='outer', on = 'barcode')
+  final_value = merged[merged['on_off'] == 1]
+  return final_value
 
 def get_reductions(singlecell, axis_id, deviations):
   # Return table with barcode|barcode_index|adjust where "adjust" is the new
@@ -129,7 +131,7 @@ def combine_tables(singlecell, deviations=1):
 
     # concat rows and columns
     # If a tixel occurs twice, take the average value
-    combined_table = averageDuplicates([row_reductions.values.tolist(), col_reductions.values.tolist(), diag_reductions.values.tolist()])
+    combined_table = average_duplicates([row_reductions.values.tolist(), col_reductions.values.tolist(), diag_reductions.values.tolist()])
     
     return combined_table
 
