@@ -59,10 +59,6 @@ def get_reductions(singlecell: pd.DataFrame, axis_id: str, deviations: int) -> p
 
   # identify lanes more than x standard deviations above mean
   upper_limit = mean + deviations * std
-  
-  
-
-
 
   # Filter singlecell table to only outliers
   singlecell = singlecell[singlecell[axis_id] > upper_limit]
