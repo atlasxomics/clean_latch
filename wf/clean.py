@@ -26,10 +26,7 @@ def filter_sc(singlecell_path: str, position_path: str) -> pd.DataFrame:
   """ reformat data, remove headers, apply custom column names for
   dataframes, add -1 to positions, remove off tixels
   """
-  singlecell = pd.read_csv(singlecell_path, header=[0,1])
-  singlecell = pd.DataFrame(singlecell[:].values)
-  
-  singlecell.columns = ['barcode', 'total', 'duplicate', 'chimeric', 'unmapped',	'lowmapq', 'mitochondrial',	'nonprimary',	'passed_filters',	'is__cell_barcode',	'excluded_reason',	'TSS_fragments',	'DNase_sensitive_region_fragments',	'enhancer_region_fragments', 'promoter_region_fragments', 'on_target_fragments', 'blacklist_region_fragments', 'peak_region_fragments', 'peak_region_cutsites']
+  singlecell = pd.read_csv(singlecell_path).drop(0, axis=0)
   positions = pd.read_csv(position_path, header=None)
   positions.columns = ['barcode', 'on_off', 'row', 'col', 'y', 'x']
   add_value = positions.loc[:,'barcode'].apply(lambda x: x + "-1")
