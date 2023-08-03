@@ -21,7 +21,7 @@ def cleaning_task(
     ) -> LatchFile:
 
     _r_cmd = [
-        "Rscript",
+        "python",
         "/root/wf/clean.py",
         run_id,
         singlecell_file.local_path,
