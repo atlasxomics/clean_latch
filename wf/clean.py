@@ -204,11 +204,11 @@ def clean_fragments(
 
 if __name__ == '__main__':
 
-  run_id = sys.args[1]
-  singlecell_path = sys.args[2]
-  position_path = sys.args[3]
-  fragments_path = sys.args[4]
-  deviations = int(sys.args[5])
+  run_id = sys.argv[1]
+  singlecell_path = sys.argv[2]
+  position_path = sys.argv[3]
+  fragments_path = sys.argv[4]
+  deviations = int(sys.argv[5])
 
   singlecell = filter_sc(singlecell_path, position_path)
   reduct_dict = combine_tables(singlecell, deviations)
