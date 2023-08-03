@@ -15,7 +15,7 @@ def cleaning_task(
 
     _r_cmd = [
         "Rscript",
-        "/root/wf/clean.R",
+        "/root/wf/clean.py",
         run_id,
         singlecell_file.local_path,
         positions_file.local_path,
