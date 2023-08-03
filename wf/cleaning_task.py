@@ -64,6 +64,6 @@ if __name__ == "__main__":
         output_dir="ds_D01033_NG01681",
         singlecell_file = LatchFile("latch://13502.account/atac_outs/ds_D01033_NG01681/outs/ds_D01033_NG01681_singlecell.csv"),
         positions_file = LatchFile("latch://13502.account/spatials/demo/spatial/tissue_positions_list.csv"),
-        fragments_file = LatchFile("latch://13502.account/ataciouts/ds_D01033_NG01681/outs/ds_D01033_NG01681_fragments.tsv.gz"),
-        deviations=1,        
+        fragments_file = LatchFile("latch://13502.account/atac_outs/ds_D01033_NG01681/outs/ds_D01033_NG01681_fragments.tsv.gz"),
+        deviations=1,      
         )

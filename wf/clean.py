@@ -41,7 +41,7 @@ def filter_sc(singlecell_path: str, position_path: str) -> pd.DataFrame:
 
   singlecell = pd.read_csv(singlecell_path).drop(0, axis=0)
   
-  positions = pd.read_csv(position_path, header=None)
+  positions = pd.read_csv(position_path, header=None, usecols=[0,1,3,4])
   positions.columns = ['barcode', 'on_off', 'row', 'col']
   positions['barcode'] = positions.loc[:,'barcode'].apply(lambda x: x + "-1")
 
