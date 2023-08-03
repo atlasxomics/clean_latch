@@ -1,3 +1,4 @@
+import logging
 import math
 import numpy as np
 import pandas as pd
@@ -5,6 +6,11 @@ import statistics
 import sys
 
 from typing import Dict, List
+
+logging.basicConfig(
+    format="%(levelname)s - %(asctime)s - %(message)s",
+    level=logging.INFO
+)
 
 def average_duplicates(big_list: List[List[int]]) -> Dict[str, float]:
   """Combine row, col, diag reduction lists; if a barcode occurs in 
@@ -165,7 +171,7 @@ def clean_fragments(
   according to reduction table.
   """
 
-  print("Loading fragments.tsv")
+  logging.info("Loading fragments.tsv")
   fragments = pd.read_csv(
     fragments_path,
     sep='\t',
@@ -177,12 +183,12 @@ def clean_fragments(
   frag_copy = fragments.copy()
   outlier_barcodes = list(r_table.keys())
 
-  print("Splitting fragments.tsv")
+  logging.info("Splitting fragments.tsv")
   normal_frags = fragments[fragments['barcode'].isin(outlier_barcodes) == False]
   outlier_frags = frag_copy[frag_copy['barcode'].isin(outlier_barcodes) == True]
 
   # To each df in the list, randomly downsample if in reduction list
-  print("Downsampling....")
+  logging.info("Downsampling....")
   barcode_groups = outlier_frags.groupby('barcode')
   list_concat = []
   for i in outlier_barcodes:
