@@ -176,7 +176,7 @@ def clean_fragments(
     fragments_path,
     sep='\t',
     header=None,
-    skiprows=list(range(51))
+    comment='#'
   )
   fragments.columns = ['V1', 'V2', 'V3', 'barcode', 'V4']
 
