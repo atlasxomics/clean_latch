@@ -1,3 +1,4 @@
+import logging
 import math
 import numpy as np
 import pandas as pd
@@ -5,6 +6,11 @@ import statistics
 import sys
 
 from typing import Dict, List
+
+logging.basicConfig(
+    format="%(levelname)s - %(asctime)s - %(message)s",
+    level=logging.INFO
+)
 
 def average_duplicates(big_list: List[List[int]]) -> Dict[str, float]:
   """Combine row, col, diag reduction lists; if a barcode occurs in 
@@ -35,7 +41,7 @@ def filter_sc(singlecell_path: str, position_path: str) -> pd.DataFrame:
 
   singlecell = pd.read_csv(singlecell_path).drop(0, axis=0)
   
-  positions = pd.read_csv(position_path, header=None)
+  positions = pd.read_csv(position_path, header=None, usecols=[0,1,3,4])
   positions.columns = ['barcode', 'on_off', 'row', 'col']
   positions['barcode'] = positions.loc[:,'barcode'].apply(lambda x: x + "-1")
 
@@ -165,24 +171,24 @@ def clean_fragments(
   according to reduction table.
   """
 
-  print("Loading fragments.tsv")
+  logging.info("Loading fragments.tsv")
   fragments = pd.read_csv(
     fragments_path,
     sep='\t',
     header=None,
-    skiprows=list(range(51))
+    comment='#'
   )
   fragments.columns = ['V1', 'V2', 'V3', 'barcode', 'V4']
 
   frag_copy = fragments.copy()
   outlier_barcodes = list(r_table.keys())
 
-  print("Splitting fragments.tsv")
+  logging.info("Splitting fragments.tsv")
   normal_frags = fragments[fragments['barcode'].isin(outlier_barcodes) == False]
   outlier_frags = frag_copy[frag_copy['barcode'].isin(outlier_barcodes) == True]
 
   # To each df in the list, randomly downsample if in reduction list
-  print("Downsampling....")
+  logging.info("Downsampling....")
   barcode_groups = outlier_frags.groupby('barcode')
   list_concat = []
   for i in outlier_barcodes:
@@ -198,11 +204,11 @@ def clean_fragments(
 
 if __name__ == '__main__':
 
-  run_id = sys.args[1]
-  singlecell_path = sys.args[2]
-  position_path = sys.args[3]
-  fragments_path = sys.args[4]
-  deviations = int(sys.args[5])
+  run_id = sys.argv[1]
+  singlecell_path = sys.argv[2]
+  position_path = sys.argv[3]
+  fragments_path = sys.argv[4]
+  deviations = int(sys.argv[5])
 
   singlecell = filter_sc(singlecell_path, position_path)
   reduct_dict = combine_tables(singlecell, deviations)
