@@ -1,3 +1,4 @@
+import csv
 import logging
 import math
 import numpy as np
@@ -6,12 +7,13 @@ import statistics
 import sys
 
 from typing import Dict, List
-
 logging.basicConfig(
     format="%(levelname)s - %(asctime)s - %(message)s",
     level=logging.INFO
 )
 
+metrics_output = None
+  
 def average_duplicates(big_list: List[List[int]]) -> Dict[str, float]:
   """Combine row, col, diag reduction lists; if a barcode occurs in 
   more then one list, returns the average.
@@ -59,7 +61,8 @@ def get_reductions(
   is the new value to reduce outlier lanes to; table to be used to
   reduce fragments.tsv  
   """
-
+  global metrics_output
+  
   # calculate axis medians
   str_length = singlecell[axis_id].unique().tolist()
   all_indexes = {}
@@ -70,6 +73,7 @@ def get_reductions(
     pre_sort.sort()
     all_indexes[i] = statistics.median(pre_sort)
   
+  axisid_info = singlecell[['barcode', axis_id]] 
   apply_medians = singlecell.loc[:,axis_id].apply(lambda x: all_indexes[x])
   singlecell[axis_id] = apply_medians
 
@@ -81,7 +85,16 @@ def get_reductions(
   
   # Filter singlecell table to only outliers
   singlecell = singlecell[singlecell[axis_id] > upper_limit]
-
+  
+  # Store rows/cols being downsampled in global variable
+  bad_barcodes = singlecell['barcode'].values.tolist()
+  downsampled_elements = set()
+  for i in bad_barcodes:
+    correct_element = axisid_info.loc[axisid_info['barcode'] == i]
+    convert_list = [[i, j + 1] for i,j in correct_element.values.tolist()]
+    downsampled_elements.add(str(convert_list[0][1]))
+  set_to_string = ', '.join(downsampled_elements)
+  metrics_output[axis_id] = set_to_string
   # Add "adjust" column containing value to reduce reads to
   singlecell = singlecell.assign(
     adjust = lambda x: np.ceil(x.passed_filters * (mean / x[axis_id]))
@@ -96,7 +109,7 @@ def get_diag_reductions(
   """Return reduction table for diagonal if median of diagonal counts
   an outlier compared to either rows or columns.
   """
-
+  global metrics_output
   str_length_r = singlecell['row'].unique().tolist()
   all_indexes_r = {}
   for i in str_length_r: 
@@ -140,6 +153,8 @@ def get_diag_reductions(
   else:
       diag_sc['adjust'] = diag_sc['passed_filters']
 
+  if diag_sc.shape[0] > 0: metrics_output['down'] = 'TRUE'
+  else: metrics_output['down'] = 'FALSE'
   return diag_sc[['barcode', 'adjust']]
 
 def combine_tables(
@@ -170,7 +185,7 @@ def clean_fragments(
   """Reduce high tixels by randomly downsampling fragments.tsv
   according to reduction table.
   """
-
+  global metrics_output
   logging.info("Loading fragments.tsv")
   fragments = pd.read_csv(
     fragments_path,
@@ -179,7 +194,7 @@ def clean_fragments(
     comment='#'
   )
   fragments.columns = ['V1', 'V2', 'V3', 'barcode', 'V4']
-
+  metrics_output['og'] = fragments.shape[0]
   frag_copy = fragments.copy()
   outlier_barcodes = list(r_table.keys())
 
@@ -199,12 +214,15 @@ def clean_fragments(
   
   downsampled_frags = pd.concat(list_concat)
   fragments_cleaned = pd.concat([downsampled_frags, normal_frags])
-
+  metrics_output['final'] = fragments_cleaned.shape[0]
+  metrics_output['pct'] = metrics_output['final'] / metrics_output['og']
   return fragments_cleaned
 
 if __name__ == '__main__':
 
+  metrics_output = {}
   run_id = sys.argv[1]
+  metrics_output['run_id'] = run_id
   singlecell_path = sys.argv[2]
   position_path = sys.argv[3]
   fragments_path = sys.argv[4]
@@ -220,3 +238,18 @@ if __name__ == '__main__':
     index=False,
     header=False
   )
+  
+  fields = [
+    'Run_Id',
+    'Columns downsampled',
+    'Rows downsampled',
+    'Diagonal downsampled',
+    'Original fragments',
+    'Final fragments',
+    'pct_diff'
+  ]
+  filename = f'{run_id}_cleaning_metrics.csv'
+  with open(filename, 'w') as csvfile:
+    writer = csv.writer(csvfile)
+    writer.writerow(fields)
+    writer.writerow(list(metrics_output.values()))

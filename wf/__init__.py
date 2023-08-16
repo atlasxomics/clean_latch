@@ -8,6 +8,7 @@ from latch import workflow
 from latch.resources.launch_plan import LaunchPlan
 from latch.types import (
     LatchAuthor,
+    LatchDir,
     LatchFile,
     LatchMetadata,
     LatchParameter,
@@ -89,7 +90,7 @@ def clean_workflow(
     fragments_file: LatchFile,
     deviations: int=1,
     table_id: str = "390"
-) -> LatchFile:
+) -> LatchDir:
     """Workflow for normalizing hot rows and columns in spatial ATAC-seq data
 
     ## Clean high fragment couns in spatial ATAC-seq data
@@ -113,7 +114,7 @@ def clean_workflow(
     packages.
     """
     
-    cleaned_fragment_file = cleaning_task(
+    cleaned_fragment_dir = cleaning_task(
         run_id=run_id,
         output_dir=output_dir,
         singlecell_file=singlecell_file,
@@ -124,11 +125,11 @@ def clean_workflow(
 
     upload_registry_task(
         run_id=run_id, 
-        cleaned_fragment_file=cleaned_fragment_file, 
+        cleaned_fragment_dir=cleaned_fragment_dir,
         table_id=table_id
     )
 
-    return cleaned_fragment_file
+    return cleaned_fragment_dir
 
 LaunchPlan(
     clean_workflow,
@@ -138,7 +139,7 @@ LaunchPlan(
         "output_dir" : "ds_D01033_NG01681",
         "singlecell_file" : LatchFile("latch://13502.account/atac_outs/ds_D01033_NG01681/outs/ds_D01033_NG01681_singlecell.csv"),
         "positions_file" : LatchFile("latch://13502.account/spatials/demo/spatial/tissue_positions_list.csv"),
-        "fragments_file" : LatchFile("latch://13502.account/ataciouts/ds_D01033_NG01681/outs/ds_D01033_NG01681_fragments.tsv.gz"),
+        "fragments_file" : LatchFile("latch://13502.account/atac_outs/ds_D01033_NG01681/outs/ds_D01033_NG01681_fragments.tsv.gz"),
         "deviations" : 1,
     },
 )
@@ -146,9 +147,10 @@ LaunchPlan(
 if __name__ == "__main__":
    cleaning_task(
         run_id="D01236_NG02457",
-        output_dir="D01236_NG02457_test",
+        output_dir="D01236_NG02457",
         singlecell_file=LatchFile("latch://13502.account/atac_outs/D01236_NG02457/outs/D01236_NG02457_singlecell.csv"),
         positions_file=LatchFile("latch://13502.account/spatials/D1236/spatial/tissue_positions_list.csv"),
         fragments_file=LatchFile("latch://13502.account/atac_outs/D01236_NG02457/outs/D01236_NG02457_fragments.tsv.gz"),
         deviations=1
     ) 
+
