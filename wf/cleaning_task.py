@@ -1,7 +1,14 @@
+import logging
 import subprocess
 
 from latch import large_task
 from latch.types import LatchFile
+
+
+logging.basicConfig(
+    format="%(levelname)s - %(asctime)s - %(message)s",
+    level=logging.INFO
+)
 
 @large_task
 def cleaning_task(
@@ -14,8 +21,8 @@ def cleaning_task(
     ) -> LatchFile:
 
     _r_cmd = [
-        "Rscript",
-        "/root/wf/clean.R",
+        "python",
+        "/root/wf/clean.py",
         run_id,
         singlecell_file.local_path,
         positions_file.local_path,
@@ -23,7 +30,7 @@ def cleaning_task(
         str(deviations),
     ]
 
-    print("cleaning...")
+    logging.info("cleaning...")
     subprocess.run(_r_cmd)
     out_table = f"{run_id}_fragments.tsv"
 
@@ -34,7 +41,7 @@ def cleaning_task(
         out_table
     ]
     
-    print("sorting...")
+    logging.info("sorting...")
     subprocess.run(_sort_cmd, stdout=open(f"cleaned_{out_table}", "w"))
 
     _zip_cmd = [
@@ -42,7 +49,7 @@ def cleaning_task(
         f"cleaned_{out_table}" 
     ]
 
-    print("zipping...")
+    logging.info("zipping...")
     subprocess.run(_zip_cmd)
     out_file = f"cleaned_{out_table}.gz"
 
@@ -57,6 +64,6 @@ if __name__ == "__main__":
         output_dir="ds_D01033_NG01681",
         singlecell_file = LatchFile("latch://13502.account/atac_outs/ds_D01033_NG01681/outs/ds_D01033_NG01681_singlecell.csv"),
         positions_file = LatchFile("latch://13502.account/spatials/demo/spatial/tissue_positions_list.csv"),
-        fragments_file = LatchFile("latch://13502.account/ataciouts/ds_D01033_NG01681/outs/ds_D01033_NG01681_fragments.tsv.gz"),
-        deviations=1,        
+        fragments_file = LatchFile("latch://13502.account/atac_outs/ds_D01033_NG01681/outs/ds_D01033_NG01681_fragments.tsv.gz"),
+        deviations=1,      
         )
