@@ -7,7 +7,6 @@ import statistics
 import sys
 
 from typing import Dict, List
-
 logging.basicConfig(
     format="%(levelname)s - %(asctime)s - %(message)s",
     level=logging.INFO
@@ -92,7 +91,7 @@ def get_reductions(
   downsampled_elements = set()
   for i in bad_barcodes:
     correct_element = axisid_info.loc[axisid_info['barcode'] == i]
-    convert_list = correct_element.values.tolist()
+    convert_list = [[i, j + 1] for i,j in correct_element.values.tolist()]
     downsampled_elements.add(str(convert_list[0][1]))
   set_to_string = ', '.join(downsampled_elements)
   metrics_output[axis_id] = set_to_string
@@ -223,6 +222,7 @@ if __name__ == '__main__':
 
   metrics_output = {}
   run_id = sys.argv[1]
+  metrics_output['run_id'] = run_id
   singlecell_path = sys.argv[2]
   position_path = sys.argv[3]
   fragments_path = sys.argv[4]
@@ -239,8 +239,15 @@ if __name__ == '__main__':
     header=False
   )
   
-  fields = ['Run_Id', 'Columns downsampled', 'Rows downsampled', 'Diagonal downsampled', 
-            'Original fragments', 'Final fragments', 'pct_difng']
+  fields = [
+    'Run_Id',
+    'Columns downsampled',
+    'Rows downsampled',
+    'Diagonal downsampled',
+    'Original fragments',
+    'Final fragments',
+    'pct_diff'
+  ]
   filename = f'{run_id}_cleaning_metrics.csv'
   with open(filename, 'w') as csvfile:
     writer = csv.writer(csvfile)
