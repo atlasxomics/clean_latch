@@ -13,6 +13,7 @@ logging.basicConfig(
 )
 
 metrics_output = None
+bad_elements = []
   
 def average_duplicates(big_list: List[List[int]]) -> Dict[str, float]:
   """Combine row, col, diag reduction lists; if a barcode occurs in 
@@ -51,35 +52,37 @@ def filter_sc(singlecell_path: str, position_path: str) -> pd.DataFrame:
   filtered = merged[merged['on_off'] == 1]
 
   return filtered
-    
+
 def get_neighbors(current_value: int, repeat: List[int]) -> List[int]:
+  global bad_elements
+  
   all_neighbors = []
   row = current_value[0]
   col = current_value[1]
   
   #right
-  if col + 1 < 50:
+  if col + 1 < 50 and [row, col + 1] not in bad_elements:
     all_neighbors.append([row, col + 1])
   #left
-  if col - 1 >= 0:
+  if col - 1 >= 0 and [row, col - 1] not in bad_elements:
     all_neighbors.append([row, col - 1])
   #down
-  if row + 1 < 50:
+  if row + 1 < 50 and [row + 1, col] not in bad_elements:
     all_neighbors.append([row + 1, col])  
   #up
-  if row - 1 >= 0:
+  if row - 1 >= 0 and [row - 1, col] not in bad_elements:
     all_neighbors.append([row - 1, col])
   #leftUp
-  if row - 1 >= 0 and col - 1 >= 0:
+  if row - 1 >= 0 and col - 1 >= 0 and [row - 1, col - 1] not in bad_elements:
     all_neighbors.append([row - 1, col - 1])
   #leftDown
-  if row + 1 < 50 and col - 1 >= 0:
+  if row + 1 < 50 and col - 1 >= 0 and [row + 1, col - 1] not in bad_elements:
     all_neighbors.append([row + 1, col - 1])
   #rightUp
-  if row - 1 >= 0 and col + 1 < 50:
+  if row - 1 >= 0 and col + 1 < 50 and [row - 1, col + 1] not in bad_elements:
     all_neighbors.append([row - 1, col + 1])
   #rightDown
-  if row + 1 < 50 and col + 1 < 50:
+  if row + 1 < 50 and col + 1 < 50 and [row + 1, col + 1] not in bad_elements:
     all_neighbors.append([row + 1, col + 1])
 
   return all_neighbors
@@ -118,7 +121,8 @@ def neighbors_reductions(
         on_tixels.append(current_neighbor['passed_filters'].values[0])
       except Exception as e:
         pass
-    mean = statistics.mean(on_tixels)
+    if len(on_tixels) > 0: mean = statistics.mean(on_tixels)
+    else: mean = singlecell.iloc[[i], [4]].values[0][0]
     singlecell.iloc[[i], [5]] = mean
       
   sliced = singlecell[['barcode', 'adjust']]
@@ -136,6 +140,7 @@ def get_reductions(
   reduce fragments.tsv  
   """
   global metrics_output
+  global bad_elements
   
   # calculate axis medians
   str_length = singlecell[axis_id].unique().tolist()
@@ -177,6 +182,11 @@ def get_reductions(
   for i in downsampled_elements:
     outlier_ids = np.where(og_singlecell[axis_id] == int(i))
     all_elem_ids += outlier_ids[0].tolist()
+  for i in all_elem_ids:
+    element = og_singlecell.iloc[i]
+    row = element['row']
+    col = element['col']
+    bad_elements.append([row, col])
   updated_singlecell = neighbors_reductions(og_singlecell, all_elem_ids ,degree)
   
   final = updated_singlecell
