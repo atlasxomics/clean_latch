@@ -164,7 +164,6 @@ def clean_workflow(
 
     ## Support
     Questions? Comments?  Contact support@atlasxomics.com or post in AtlasXomics [Discord](https://discord.com/channels/1004748539827597413/1005222888384770108).
-    ## Clean high fragment couns in spatial ATAC-seq data
 
     """
     
@@ -199,12 +198,13 @@ LaunchPlan(
 )
 
 if __name__ == "__main__":
-   cleaning_task(
-        run_id="D01236_NG02457",
-        output_dir="D01236_NG02457",
-        singlecell_file=LatchFile("latch://13502.account/atac_outs/D01236_NG02457/outs/D01236_NG02457_singlecell.csv"),
-        positions_file=LatchFile("latch://13502.account/spatials/D1236/spatial/tissue_positions_list.csv"),
-        fragments_file=LatchFile("latch://13502.account/atac_outs/D01236_NG02457/outs/D01236_NG02457_fragments.tsv.gz"),
-        deviations=1
+   clean_workflow(
+        run_id="demo",
+        output_dir="demo",
+        singlecell_file=LatchFile("latch:///atac_outs/demo/outs/test_singlecell.csv"),
+        positions_file=LatchFile("latch:///spatials/demo/spatial/tissue_positions_list.csv"),
+        fragments_file=LatchFile("latch:///atac_outs/demo/outs/demo_fragments.tsv.gz"),
+        deviations=2,
+        table_id = "400"
     ) 
 

@@ -1,6 +1,10 @@
+import logging
+
 from latch import small_task
 from latch.types import LatchDir
 from latch.registry.table import Table
+
+logging.basicConfig(format="%(levelname)s - %(asctime)s - %(message)s")
 
 @small_task(retries=0)
 def upload_registry_task(
@@ -10,11 +14,17 @@ def upload_registry_task(
 ):
     table = Table(table_id)
 
-    with table.update() as updater:
-        updater.upsert_record(
-            run_id,
-            cleaned_fragment_file=cleaned_fragment_dir
-        )
+    try:
+        with table.update() as updater:
+            updater.upsert_record(
+                run_id,
+                cleaned_fragment_file=cleaned_fragment_dir
+            )
+    except TypeError:
+        logging.warning(f"No table with id {table_id} found.")
+        return
+    finally:
+        return
 
 if __name__ == "__main__":
     upload_registry_task(
