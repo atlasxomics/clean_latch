@@ -19,7 +19,7 @@ The workflow identifies outlier rows and columns in which fragment counts are ab
 
 
 ## Inputs
-All input files for **optimize archr** must be on the latch.bio [file system](https://wiki.latch.bio/wiki/data/overview).  
+All input files for **clean** must be on the latch.bio [file system](https://wiki.latch.bio/wiki/data/overview).  
 
 * run id: A string identifier for the experiment; AtlasXomics defaults to standard ATX run notation (ie. Dxxxxx_NGxxxxx.)
 
