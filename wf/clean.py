@@ -56,34 +56,34 @@ def filter_sc(singlecell_path: str, position_path: str) -> pd.DataFrame:
 def get_neighbors(current_value: int, repeat: List[int]) -> List[int]:
   global bad_elements
   
-  all_neighbors = []
+  all_neighbors = {}
   row = current_value[0]
   col = current_value[1]
   
   #right
   if col + 1 < 50 and [row, col + 1] not in bad_elements:
-    all_neighbors.append([row, col + 1])
+    all_neighbors['r'] = [row, col + 1]
   #left
   if col - 1 >= 0 and [row, col - 1] not in bad_elements:
-    all_neighbors.append([row, col - 1])
+    all_neighbors['l'] = [row, col - 1]
   #down
   if row + 1 < 50 and [row + 1, col] not in bad_elements:
-    all_neighbors.append([row + 1, col])  
+    all_neighbors['d'] = [row + 1, col]
   #up
   if row - 1 >= 0 and [row - 1, col] not in bad_elements:
-    all_neighbors.append([row - 1, col])
+    all_neighbors['u'] = [row - 1, col]
   #leftUp
   if row - 1 >= 0 and col - 1 >= 0 and [row - 1, col - 1] not in bad_elements:
-    all_neighbors.append([row - 1, col - 1])
+    all_neighbors['lu'] = [row - 1, col - 1]
   #leftDown
   if row + 1 < 50 and col - 1 >= 0 and [row + 1, col - 1] not in bad_elements:
-    all_neighbors.append([row + 1, col - 1])
+    all_neighbors['ld'] = [row + 1, col - 1]
   #rightUp
   if row - 1 >= 0 and col + 1 < 50 and [row - 1, col + 1] not in bad_elements:
-    all_neighbors.append([row - 1, col + 1])
+    all_neighbors['ru'] = [row - 1, col + 1]
   #rightDown
   if row + 1 < 50 and col + 1 < 50 and [row + 1, col + 1] not in bad_elements:
-    all_neighbors.append([row + 1, col + 1])
+    all_neighbors['rd'] = [row + 1, col + 1]
 
   return all_neighbors
 
@@ -100,7 +100,9 @@ def multiple_degree(first_neighbors: List[int], degree: int, current: int) -> Li
 def neighbors_reductions(
     singlecell: pd.DataFrame,
     outliers: List[int],
-    degree: int
+    degree: int,
+    global_mean: float,
+    axis_id: str
   ) -> pd.DataFrame:
   """ Return table with barcode|barcode_index|adjust where "adjust"
   is the new value to reduce outlier lanes to; table to be used to
@@ -113,16 +115,25 @@ def neighbors_reductions(
     row = current_tixel['row']
     col = current_tixel['col']
     neighbors = get_neighbors([row, col], [])
-    if degree > 1: neighbors += multiple_degree(neighbors, degree, i)        
+    # if degree > 1: neighbors += multiple_degree(neighbors, degree, i)        
     on_tixels = []
-    for j in neighbors:
+    for x,j in neighbors.items():
       try:
         current_neighbor = singlecell.loc[(singlecell['row'] == j[0]) & (singlecell['col'] == j[1])]
-        on_tixels.append(current_neighbor['passed_filters'].values[0])
+        if x not in ['lu', 'ld', 'ru', 'rd']:
+          on_tixels.append(current_neighbor['passed_filters'].values[0])
+        else:
+          on_tixels.append(current_neighbor['passed_filters'].values[0] * .7)
       except Exception as e:
         pass
-    if len(on_tixels) > 0: mean = statistics.mean(on_tixels)
-    else: mean = singlecell.iloc[[i], [4]].values[0][0]
+    if len(on_tixels) > 0: 
+      mean = statistics.mean(on_tixels)
+    else:
+      if axis_id != 'diag':
+        normalized_median = (global_mean / singlecell.iloc[[i], [1]].values[0][0])
+        mean = singlecell.iloc[[i], [4]].values[0][0] * normalized_median
+      else:
+        mean = singlecell.iloc[[i], [4]].values[0][0] * global_mean
     singlecell.iloc[[i], [5]] = mean
       
   sliced = singlecell[['barcode', 'adjust']]
@@ -187,7 +198,7 @@ def get_reductions(
     row = element['row']
     col = element['col']
     bad_elements.append([row, col])
-  updated_singlecell = neighbors_reductions(og_singlecell, all_elem_ids ,degree)
+  updated_singlecell = neighbors_reductions(og_singlecell, all_elem_ids, degree, mean, axis_id)
   
   final = updated_singlecell
   return final
@@ -235,8 +246,11 @@ def get_diag_reductions(
   diag_mean = diag_sc['passed_filters'].mean()
 
   # create 'adjust' column with reads to downsample
-  if diag_mean > rows_limit or diag_mean > cols_limit:
-    diag_sc = neighbors_reductions(singlecell, all_elem_ids, degree)
+  if diag_mean > rows_limit:
+    diag_sc = neighbors_reductions(singlecell, all_elem_ids, degree, (row_mean/diag_mean), 'diag')
+    metrics_output['down'] = 'TRUE'
+  elif diag_mean > cols_limit:
+    diag_sc = neighbors_reductions(singlecell, all_elem_ids, degree, (col_mean/diag_mean), 'diag')
     metrics_output['down'] = 'TRUE'
   else:
       diag_sc['adjust'] = diag_sc['passed_filters']
