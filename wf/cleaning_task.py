@@ -2,7 +2,7 @@ import logging
 import subprocess
 
 from latch import large_task
-from latch.types import LatchFile
+from latch.types import LatchDir, LatchFile
 
 
 logging.basicConfig(
@@ -18,7 +18,7 @@ def cleaning_task(
     positions_file: LatchFile,
     fragments_file: LatchFile,
     deviations: int,
-    ) -> LatchFile:
+    ) -> LatchDir:
 
     _r_cmd = [
         "python",
@@ -32,7 +32,9 @@ def cleaning_task(
 
     logging.info("cleaning...")
     subprocess.run(_r_cmd)
+
     out_table = f"{run_id}_fragments.tsv"
+    out_metrics = f"{run_id}_cleaning_metrics.csv"
 
     _sort_cmd = [
         "sort",
@@ -53,10 +55,13 @@ def cleaning_task(
     subprocess.run(_zip_cmd)
     out_file = f"cleaned_{out_table}.gz"
 
-    local_location = f"/root/{out_file}"
-    remote_location = f"latch:///cleaned/{output_dir}/{out_file}"
+    subprocess.run(["mkdir", output_dir])
+    subprocess.run(["mv", out_file, out_metrics, output_dir])
 
-    return LatchFile(str(local_location), remote_location)
+    local_dir = f"/root/{output_dir}"
+    remote_dir = f"latch:///cleaned/{output_dir}"
+
+    return LatchDir(str(local_dir), remote_dir)
 
 if __name__ == "__main__":
     cleaning_task(
