@@ -244,20 +244,20 @@ def get_diag_reductions(
   diag_sc = singlecell[singlecell['row'] == singlecell['col']]
   all_elem_ids = np.where(singlecell['row'] == singlecell['col'])[0].tolist()
   diag_mean = diag_sc['passed_filters'].mean()
-
+  final_dataFrame = None
   # create 'adjust' column with reads to downsample
   if diag_mean > rows_limit:
-    diag_sc = neighbors_reductions(singlecell, all_elem_ids, degree, (row_mean/diag_mean), 'diag')
+    final_dataFrame = neighbors_reductions(singlecell, all_elem_ids, degree, (row_mean/diag_mean), 'diag')
     metrics_output['down'] = 'TRUE'
   elif diag_mean > cols_limit:
-    diag_sc = neighbors_reductions(singlecell, all_elem_ids, degree, (col_mean/diag_mean), 'diag')
+    final_dataFrame = neighbors_reductions(singlecell, all_elem_ids, degree, (col_mean/diag_mean), 'diag')
     metrics_output['down'] = 'TRUE'
   else:
       diag_sc['adjust'] = diag_sc['passed_filters']
-      diag_sc[['barcode', 'adjust']]
+      final_dataFrame =  diag_sc[['barcode', 'adjust']]
       metrics_output['down'] = 'FALSE'
 
-  return diag_sc
+  return final_dataFrame
 
 def combine_tables(
     singlecell: pd.DataFrame,
