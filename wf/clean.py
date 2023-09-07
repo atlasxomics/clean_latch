@@ -183,7 +183,7 @@ def get_reductions(
   
   for i in bad_barcodes:
     correct_element = axisid_info.loc[axisid_info['barcode'] == i]
-    convert_list = [[i, j + 1] for i,j in correct_element.values.tolist()]
+    convert_list = [[i, j] for i,j in correct_element.values.tolist()]
     downsampled_elements.add(str(convert_list[0][1]))
   set_to_string = ', '.join(downsampled_elements)
   metrics_output[axis_id] = set_to_string
