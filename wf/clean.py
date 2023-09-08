@@ -32,7 +32,7 @@ def average_duplicates(big_list: List[List[int]]) -> Dict[str, float]:
       else:
         if x[1] not in barcodes_match[x[0]]:
           barcodes_match[x[0]].append(x[1])
-  for i,j in barcodes_match.items():
+  for i, j in barcodes_match.items():
     mean = statistics.mean(j)
     final[i] = mean
 
@@ -43,9 +43,9 @@ def filter_sc(singlecell_path: str, position_path: str) -> pd.DataFrame:
   dataframes, add -1 to positions, remove off tixels.
   """
   global number_of_channels
-  singlecell = pd.read_csv(singlecell_path, usecols=[0,8]).drop(0, axis=0)
+  singlecell = pd.read_csv(singlecell_path, usecols=[0, 8]).drop(0, axis=0)
   
-  positions = pd.read_csv(position_path, header=None, usecols=[0,1,2,3])
+  positions = pd.read_csv(position_path, header=None, usecols=[0, 1, 2, 3])
   positions.columns = ['barcode', 'on_off', 'row', 'col']
   number_of_channels = math.sqrt(positions.shape[0])
   positions['barcode'] = positions.loc[:,'barcode'].apply(lambda x: x + "-1")
@@ -64,33 +64,44 @@ def get_neighbors(current_value: int, repeat: List[int]) -> List[int]:
   col = current_value[1]
   
   #right
-  if col + 1 < number_of_channels and [row, col + 1] not in bad_elements:
+  if (col + 1 < number_of_channels
+      and [row, col + 1] not in bad_elements):
     all_neighbors['r'] = [row, col + 1]
   #left
   if col - 1 >= 0 and [row, col - 1] not in bad_elements:
     all_neighbors['l'] = [row, col - 1]
   #down
-  if row + 1 < number_of_channels and [row + 1, col] not in bad_elements:
+  if (row + 1 < number_of_channels
+      and [row + 1, col] not in bad_elements):
     all_neighbors['d'] = [row + 1, col]
   #up
   if row - 1 >= 0 and [row - 1, col] not in bad_elements:
     all_neighbors['u'] = [row - 1, col]
   #leftUp
-  if row - 1 >= 0 and col - 1 >= 0 and [row - 1, col - 1] not in bad_elements:
+  if (row - 1 >= 0 and col - 1 >= 0
+      and [row - 1, col - 1] not in bad_elements):
     all_neighbors['lu'] = [row - 1, col - 1]
   #leftDown
-  if row + 1 < number_of_channels and col - 1 >= 0 and [row + 1, col - 1] not in bad_elements:
+  if (row + 1 < number_of_channels and col - 1 >= 0
+      and [row + 1, col - 1] not in bad_elements):
     all_neighbors['ld'] = [row + 1, col - 1]
   #rightUp
-  if row - 1 >= 0 and col + 1 < number_of_channels and [row - 1, col + 1] not in bad_elements:
+  if (row - 1 >= 0 and col + 1 < number_of_channels
+      and [row - 1, col + 1] not in bad_elements):
     all_neighbors['ru'] = [row - 1, col + 1]
   #rightDown
-  if row + 1 < number_of_channels and col + 1 < number_of_channels and [row + 1, col + 1] not in bad_elements:
+  if (row + 1 < number_of_channels
+      and col + 1 < number_of_channels
+      and [row + 1, col + 1] not in bad_elements):
     all_neighbors['rd'] = [row + 1, col + 1]
 
   return all_neighbors
 
-def multiple_degree(first_neighbors: List[int], degree: int, current: int) -> List[int]:
+def multiple_degree(
+    first_neighbors: List[int],
+    degree: int,
+    current: int
+  ) -> List[int]:
   current_neighbors = first_neighbors.copy()
   actual_degree = degree - 1
   for i in first_neighbors:
@@ -117,12 +128,12 @@ def neighbors_reductions(
     current_tixel = singlecell.iloc[i]
     row = current_tixel['row']
     col = current_tixel['col']
-    neighbors = get_neighbors([row, col], [])
-    # if degree > 1: neighbors += multiple_degree(neighbors, degree, i)        
+    neighbors = get_neighbors([row, col], [])     
     on_tixels = []
     for x,j in neighbors.items():
       try:
-        current_neighbor = singlecell.loc[(singlecell['row'] == j[0]) & (singlecell['col'] == j[1])]
+        current_neighbor = singlecell.loc[(singlecell['row'] == j[0])
+                                          & (singlecell['col'] == j[1])]
         if x not in ['lu', 'ld', 'ru', 'rd']:
           on_tixels.append(current_neighbor['passed_filters'].values[0])
         else:
@@ -186,8 +197,8 @@ def get_reductions(
   
   for i in bad_barcodes:
     correct_element = axisid_info.loc[axisid_info['barcode'] == i]
-    convert_list = [[i, j] for i,j in correct_element.values.tolist()]
-    downsampled_elements.add(str(convert_list[0][1]))
+    convert_list = [[i, j] for i, j in correct_element.values.tolist()]
+    downsampled_elements.add(str(convert_list[0][1] + 1)) # +1 for 1-based
   set_to_string = ', '.join(downsampled_elements)
   metrics_output[axis_id] = set_to_string
   
@@ -247,13 +258,26 @@ def get_diag_reductions(
   diag_sc = singlecell[singlecell['row'] == singlecell['col']]
   all_elem_ids = np.where(singlecell['row'] == singlecell['col'])[0].tolist()
   diag_mean = diag_sc['passed_filters'].mean()
+
   final_dataFrame = None
   # create 'adjust' column with reads to downsample
   if diag_mean > rows_limit:
-    final_dataFrame = neighbors_reductions(singlecell, all_elem_ids, degree, (row_mean/diag_mean), 'diag')
+    final_dataFrame = neighbors_reductions(
+      singlecell,
+      all_elem_ids,
+      degree,
+      (row_mean/diag_mean),
+      'diag'
+    )
     metrics_output['down'] = 'TRUE'
   elif diag_mean > cols_limit:
-    final_dataFrame = neighbors_reductions(singlecell, all_elem_ids, degree, (col_mean/diag_mean), 'diag')
+    final_dataFrame = neighbors_reductions(
+      singlecell,
+      all_elem_ids,
+      degree,
+      (col_mean/diag_mean),
+      'diag'
+    )
     metrics_output['down'] = 'TRUE'
   else:
       diag_sc['adjust'] = diag_sc['passed_filters']
@@ -348,8 +372,8 @@ if __name__ == '__main__':
   
   fields = [
     'Run_Id',
-    'Columns downsampled',
     'Rows downsampled',
+    'Columns downsampled',
     'Diagonal downsampled',
     'Original fragments',
     'Final fragments',
