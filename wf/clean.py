@@ -14,6 +14,7 @@ logging.basicConfig(
 
 metrics_output = None
 bad_elements = []
+number_of_channels = None
   
 def average_duplicates(big_list: List[List[int]]) -> Dict[str, float]:
   """Combine row, col, diag reduction lists; if a barcode occurs in 
@@ -41,11 +42,12 @@ def filter_sc(singlecell_path: str, position_path: str) -> pd.DataFrame:
   """ Reformat data, remove headers, apply custom column names for
   dataframes, add -1 to positions, remove off tixels.
   """
-
+  global number_of_channels
   singlecell = pd.read_csv(singlecell_path, usecols=[0,8]).drop(0, axis=0)
   
   positions = pd.read_csv(position_path, header=None, usecols=[0,1,2,3])
   positions.columns = ['barcode', 'on_off', 'row', 'col']
+  number_of_channels = math.sqrt(positions.shape[0])
   positions['barcode'] = positions.loc[:,'barcode'].apply(lambda x: x + "-1")
 
   merged = pd.merge(positions.astype(object), singlecell.astype(object))
@@ -55,19 +57,20 @@ def filter_sc(singlecell_path: str, position_path: str) -> pd.DataFrame:
 
 def get_neighbors(current_value: int, repeat: List[int]) -> List[int]:
   global bad_elements
+  global number_of_channels
   
   all_neighbors = {}
   row = current_value[0]
   col = current_value[1]
   
   #right
-  if col + 1 < 50 and [row, col + 1] not in bad_elements:
+  if col + 1 < number_of_channels and [row, col + 1] not in bad_elements:
     all_neighbors['r'] = [row, col + 1]
   #left
   if col - 1 >= 0 and [row, col - 1] not in bad_elements:
     all_neighbors['l'] = [row, col - 1]
   #down
-  if row + 1 < 50 and [row + 1, col] not in bad_elements:
+  if row + 1 < number_of_channels and [row + 1, col] not in bad_elements:
     all_neighbors['d'] = [row + 1, col]
   #up
   if row - 1 >= 0 and [row - 1, col] not in bad_elements:
@@ -76,13 +79,13 @@ def get_neighbors(current_value: int, repeat: List[int]) -> List[int]:
   if row - 1 >= 0 and col - 1 >= 0 and [row - 1, col - 1] not in bad_elements:
     all_neighbors['lu'] = [row - 1, col - 1]
   #leftDown
-  if row + 1 < 50 and col - 1 >= 0 and [row + 1, col - 1] not in bad_elements:
+  if row + 1 < number_of_channels and col - 1 >= 0 and [row + 1, col - 1] not in bad_elements:
     all_neighbors['ld'] = [row + 1, col - 1]
   #rightUp
-  if row - 1 >= 0 and col + 1 < 50 and [row - 1, col + 1] not in bad_elements:
+  if row - 1 >= 0 and col + 1 < number_of_channels and [row - 1, col + 1] not in bad_elements:
     all_neighbors['ru'] = [row - 1, col + 1]
   #rightDown
-  if row + 1 < 50 and col + 1 < 50 and [row + 1, col + 1] not in bad_elements:
+  if row + 1 < number_of_channels and col + 1 < number_of_channels and [row + 1, col + 1] not in bad_elements:
     all_neighbors['rd'] = [row + 1, col + 1]
 
   return all_neighbors
