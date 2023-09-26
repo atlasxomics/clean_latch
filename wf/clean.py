@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import statistics
 import sys
+import random
 
 from typing import Dict, List
 logging.basicConfig(
@@ -14,6 +15,8 @@ logging.basicConfig(
 
 metrics_output = None
 bad_elements = []
+missing_lanes = {}
+missing_tixel_neighbor = {}
 number_of_channels = None
   
 def average_duplicates(big_list: List[List[int]]) -> Dict[str, float]:
@@ -23,10 +26,10 @@ def average_duplicates(big_list: List[List[int]]) -> Dict[str, float]:
 
   barcodes_match = {}
   final = {}
-  ee = []
+  holder = []
   for i in big_list:
-    ee.extend(i)
-    for x in ee:
+    holder.extend(i)
+    for x in holder:
       if x[0] not in barcodes_match.keys():
         barcodes_match[x[0]] = [x[1]]
       else:
@@ -105,28 +108,39 @@ def neighbors_reductions(
     outliers: List[int],
     degree: int,
     global_mean: float,
-    axis_id: str
+    axis_id: str,
+    impute_flag: bool,
   ) -> pd.DataFrame:
   """ Return table with barcode|barcode_index|adjust where "adjust"
   is the new value to reduce outlier lanes to; table to be used to
   reduce fragments.tsv  
   """
+  global missing_lanes
+  global missing_tixel_neighbor
   
   singlecell['adjust'] = 0
   for i in outliers:
     current_tixel = singlecell.iloc[i]
     row = current_tixel['row']
     col = current_tixel['col']
+    barcode = current_tixel['barcode']
     neighbors = get_neighbors([row, col], [])
     # if degree > 1: neighbors += multiple_degree(neighbors, degree, i)        
     on_tixels = []
-    for x,j in neighbors.items():
+    for pos,j in neighbors.items():
       try:
         current_neighbor = singlecell.loc[(singlecell['row'] == j[0]) & (singlecell['col'] == j[1])]
-        if x not in ['lu', 'ld', 'ru', 'rd']:
+        if pos not in ['lu', 'ld', 'ru', 'rd']:
           on_tixels.append(current_neighbor['passed_filters'].values[0])
         else:
           on_tixels.append(current_neighbor['passed_filters'].values[0] * .7)
+        
+        if impute_flag:
+          current_barode = current_neighbor['barcode'].values[0]
+          if barcode not in missing_tixel_neighbor.keys():
+            missing_tixel_neighbor[barcode] = {}
+            missing_tixel_neighbor[barcode][current_barode] = pos
+          else: missing_tixel_neighbor[barcode][current_barode] = pos
       except Exception as e:
         pass
     if len(on_tixels) > 0: 
@@ -144,7 +158,7 @@ def neighbors_reductions(
   return filtered
 
 def get_reductions(
-    singlecell: pd.DataFrame,
+    raw_singlecell: pd.DataFrame,
     axis_id: str,
     deviations: int,
     degree: int
@@ -155,11 +169,13 @@ def get_reductions(
   """
   global metrics_output
   global bad_elements
+  global missing_lanes
   
+  singlecell = raw_singlecell[raw_singlecell[axis_id].isin(missing_lanes[axis_id]) == False]
   # calculate axis medians
   str_length = singlecell[axis_id].unique().tolist()
   all_indexes = {}
-  for i in str_length: 
+  for i in str_length:
     pre_list = np.where(singlecell[axis_id] == i)
     indexes = pre_list[0].tolist()
     pre_sort = singlecell.iloc[indexes]['passed_filters'].tolist()
@@ -201,7 +217,7 @@ def get_reductions(
     row = element['row']
     col = element['col']
     bad_elements.append([row, col])
-  updated_singlecell = neighbors_reductions(og_singlecell, all_elem_ids, degree, mean, axis_id)
+  updated_singlecell = neighbors_reductions(og_singlecell, all_elem_ids, degree, mean, axis_id, False)
   
   final = updated_singlecell
   return final
@@ -250,10 +266,10 @@ def get_diag_reductions(
   final_dataFrame = None
   # create 'adjust' column with reads to downsample
   if diag_mean > rows_limit:
-    final_dataFrame = neighbors_reductions(singlecell, all_elem_ids, degree, (row_mean/diag_mean), 'diag')
+    final_dataFrame = neighbors_reductions(singlecell, all_elem_ids, degree, (row_mean/diag_mean), 'diag', False)
     metrics_output['down'] = 'TRUE'
   elif diag_mean > cols_limit:
-    final_dataFrame = neighbors_reductions(singlecell, all_elem_ids, degree, (col_mean/diag_mean), 'diag')
+    final_dataFrame = neighbors_reductions(singlecell, all_elem_ids, degree, (col_mean/diag_mean), 'diag', False)
     metrics_output['down'] = 'TRUE'
   else:
       diag_sc['adjust'] = diag_sc['passed_filters']
@@ -262,11 +278,58 @@ def get_diag_reductions(
 
   return final_dataFrame
 
+def imputate_lanes(
+    singlecell: pd.DataFrame,
+    updated_tixels: pd.DataFrame,
+    degree: int
+  ) -> pd.DataFrame:
+  """ Takes original data and applies the new values for (bad) tixels, then 
+  updates the nmissing lanes within the data
+  """
+  global missing_lanes
+  global bad_elements
+  
+  final = {}
+  # updating the datafrane
+  for i,j in updated_tixels.items():
+    current_index = np.where(singlecell['barcode'] == i)
+    singlecell.iloc[current_index[0]] = j
+  
+  bad_elements = []
+  all_elem_ids = {'row': [], 'col': []}
+  for axis,lane in missing_lanes.items():
+    for elem in lane:
+      outlier_ids = np.where(singlecell[axis] == int(elem))
+      all_elem_ids[axis] += outlier_ids[0].tolist()
+    for bad_id in all_elem_ids[axis]:
+      element = singlecell.iloc[bad_id]
+      row = element['row']
+      col = element['col']
+      bad_elements.append([row, col])
+      
+
+    
+  store_updated_barcodes = []
+  for i,j in all_elem_ids.items():
+    if len(j) > 0:
+      updated_singlecell = neighbors_reductions(singlecell, j, degree, 0, i, True)
+      store_updated_barcodes.append(updated_singlecell.values.tolist())
+  
+  if len(store_updated_barcodes) == 1:
+    final = average_duplicates([store_updated_barcodes[0]])
+  else:
+    final = average_duplicates([store_updated_barcodes[0], store_updated_barcodes[1]])
+  
+  return final
+    
+
+
 def combine_tables(
     singlecell: pd.DataFrame,
     deviations: int=1,
     degree: int=1
   ) -> pd.DataFrame:
+  global missing_lanes
 
   row_singlecell = singlecell.copy()
   col_singlecell = singlecell.copy()
@@ -281,8 +344,41 @@ def combine_tables(
     col_reductions.values.tolist(),
     diag_reductions.values.tolist()
   ])
+  if (len(missing_lanes.values()) != 0):
+    imputation_singlecell = singlecell.copy()
+    imputation = imputate_lanes(imputation_singlecell, combined_table, degree)
+    combined_table.update(imputation)
 
   return combined_table
+
+def update_fragments(
+    fragments: pd.DataFrame
+  ) -> pd.DataFrame:
+  """Remove missing tixels from fragments and add them back
+  """
+  global missing_tixel_neighbor
+  
+  missing_barcodes = list(missing_tixel_neighbor.keys())
+  remove_missing_barcodes = fragments[fragments['barcode'].isin(missing_barcodes) == False]
+  final_frags = remove_missing_barcodes.copy()
+  # return_value
+  
+  count = 1
+  for m_tixel,j in missing_tixel_neighbor.items():
+    count += 1
+    for barcode,direction in j.items():
+      if direction not in ['lu', 'ld', 'ru', 'rd']:
+        all_neighbor_frags = remove_missing_barcodes.loc[remove_missing_barcodes['barcode'] == barcode]
+        all_neighbor_frags["barcode"] = all_neighbor_frags["barcode"].str.replace(barcode, m_tixel)
+        final_frags = pd.concat([final_frags, all_neighbor_frags])
+      else:
+        all_diagnols_frags = remove_missing_barcodes.loc[remove_missing_barcodes['barcode'] == barcode]
+        twenty_five = math.floor(all_diagnols_frags.shape[0] * .25)
+        all_diagnols_frags = all_diagnols_frags.sample(n=twenty_five)
+        all_diagnols_frags["barcode"] = all_diagnols_frags["barcode"].str.replace(barcode, m_tixel)
+        final_frags = pd.concat([final_frags, all_diagnols_frags])
+        
+  return final_frags
 
 def clean_fragments(
     fragments_path: str,
@@ -303,6 +399,11 @@ def clean_fragments(
   metrics_output['og'] = fragments.shape[0]
   frag_copy = fragments.copy()
   outlier_barcodes = list(r_table.keys())
+  # Add missing lanes if needed
+  if (len(missing_lanes.values()) != 0):
+    frag_copy_missing = fragments.copy()
+    frag_copy = None
+    frag_copy = update_fragments(frag_copy_missing)
 
   logging.info("Splitting fragments.tsv")
   normal_frags = fragments[fragments['barcode'].isin(outlier_barcodes) == False]
@@ -333,6 +434,10 @@ if __name__ == '__main__':
   position_path = sys.argv[3]
   fragments_path = sys.argv[4]
   deviations = int(sys.argv[5])
+  missing_rows = sys.argv[6].split(",")
+  missing_cols = sys.argv[7].split(",")
+  missing_lanes['row'] = missing_rows
+  missing_lanes['col'] = missing_cols
   degree = 1
 
   singlecell = filter_sc(singlecell_path, position_path)
