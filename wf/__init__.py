@@ -1,10 +1,10 @@
 """Latch workflow for normalizing hot rows and columns in spatial ATAC-seq data
 """
 
-from wf.cleaning_task import cleaning_task
+from wf.cleaning_task import cleaning_task, Sample, CleaningOutput
 from wf.upload_registry_task import upload_registry_task
 
-from latch import workflow
+from latch import workflow, map_task
 from latch.resources.launch_plan import LaunchPlan
 from latch.types import (
     LatchAuthor,
@@ -12,8 +12,10 @@ from latch.types import (
     LatchFile,
     LatchMetadata,
     LatchParameter,
-    LatchRule
+    LatchRule,
 )
+
+from typing import List
 
 metadata = LatchMetadata(
     display_name="clean",
@@ -25,74 +27,32 @@ metadata = LatchMetadata(
     repository="https://github.com/atlasxomics/clean_latch",
     license="MIT",
     parameters={
-        "run_id": LatchParameter(
-            display_name="run id",
-            description="ATX Run ID with optional prefix, default to \
-                        Dxxxxx_NGxxxxx format.",
-            batch_table_column=True,
-            placeholder="Dxxxxx_NGxxxxx",
-            rules=[
-                LatchRule(
-                    regex="^[^/].*",
-                    message="run id cannot start with a '/'"
-                )
-            ]
-        ),
-        "output_dir": LatchParameter(
-            display_name="output directory",
-            description="Name of Latch subdirectory for downloaded file; files \
-                will be saved to /cleaned/{output directory}.",
-            batch_table_column=True,
-            rules=[
-                LatchRule(
-                    regex="^[^/].*",
-                    message="output directory name cannot start with a '/'"
-                )
-            ]
-        ),
-        "singlecell_file": LatchParameter(
-            display_name="singlecell file",
-            description="singlecell.csv file from cellranger output.",
-            batch_table_column=True,
-        ),
-        "positions_file": LatchParameter(
-            display_name="positions file",
-            description="tissue_positions_list.csv file from spatial folder, \
-                denoting on/off-tissue tixels.",
-            batch_table_column=True, 
-        ),
-        "fragments_file": LatchParameter(
-            display_name="fragments file",
-            description="fragments.tsv.gz file from cellranger output",
-            batch_table_column=True, 
-        ),
-        "deviations": LatchParameter(
-            display_name="standard deviations",
-            description="Number from standard deviations above the mean above \
-            which row/column medians will be considered outliers.",
-            batch_table_column=True, 
+        "samples": LatchParameter(
+            display_name="Samples", description="List of samples", samplesheet=True
         ),
         "table_id": LatchParameter(
             display_name="Registry Table ID",
-            description="Provide the ID of the Registry table. The cleaned fragment file will be populated in the table once the workflow finishes. (e.g. 390)",
-            placeholder="390"
-        )
+            description="Provide the ID of the Registry table. The cleaned fragment file will be populated in the table once the workflow finishes. (e.g. 761)",
+            placeholder="761",
+        ),
     },
     tags=[],
-
 )
+
+
 @workflow(metadata)
 def clean_workflow(
-    run_id: str,
-    output_dir: str,
-    singlecell_file: LatchFile,
-    positions_file: LatchFile,
-    fragments_file: LatchFile,
-    deviations: int=1,
-    table_id: str = "390"
-) -> LatchDir:
+    # run_id: str,
+    # output_dir: str,
+    # singlecell_file: LatchFile,
+    # positions_file: LatchFile,
+    # fragments_file: LatchFile,
+    # deviations: int=1,
+    samples: List[Sample],
+    table_id: str = "761",
+) -> List[CleaningOutput]:
     """Workflow for remediating microfludic artifacts in spatial ATAC-seq data
-    
+
     # clean
 
     <br>
@@ -110,7 +70,7 @@ def clean_workflow(
 
 
     ## Inputs
-    All input files for **optimize archr** must be on the latch.bio [file system](https://wiki.latch.bio/wiki/data/overview).  
+    All input files for **optimize archr** must be on the latch.bio [file system](https://wiki.latch.bio/wiki/data/overview).
 
     * run id: A string identifier for the experiment; AtlasXomics defaults to standard ATX run notation (ie. Dxxxxx_NGxxxxx.)
 
@@ -158,7 +118,7 @@ def clean_workflow(
 
     ## Next Steps
 
-    Cleaned fragment files can be used a input in downstream analysis (ArchR, Signac, Seuratm etc.).  Analysis can be performed locally or in a latch.bio [Pod](https://wiki.latch.bio/wiki/pods/overview).  For access to ATX-specific Pods, please contact your AtlasXomics Support Scientist.  
+    Cleaned fragment files can be used a input in downstream analysis (ArchR, Signac, Seuratm etc.).  Analysis can be performed locally or in a latch.bio [Pod](https://wiki.latch.bio/wiki/pods/overview).  For access to ATX-specific Pods, please contact your AtlasXomics Support Scientist.
 
     Further analysis can also be performed in latch.bio with the **optimize archr** (returns QC data and tests various input parameters on ArchR clustering), **create ArchRProject** (returns ArchRProject with peak and motif calling) and **atlasShiny** (returns inputs for the ATX ATAC-seq R Shiny App).  For access to these workflows, please contact your AtlasXomics Support Scientist.
 
@@ -166,45 +126,53 @@ def clean_workflow(
     Questions? Comments?  Contact support@atlasxomics.com or post in AtlasXomics [Discord](https://discord.com/channels/1004748539827597413/1005222888384770108).
 
     """
-    
-    cleaned_fragment_dir = cleaning_task(
-        run_id=run_id,
-        output_dir=output_dir,
-        singlecell_file=singlecell_file,
-        positions_file=positions_file,
-        fragments_file=fragments_file,
-        deviations=deviations
-    )
+    cleaned_outputs = map_task(cleaning_task)(sample=samples)
 
-    upload_registry_task(
-        run_id=run_id, 
-        cleaned_fragment_dir=cleaned_fragment_dir,
-        table_id=table_id
-    )
+    upload_registry_task(cleaned_outputs=cleaned_outputs, table_id=table_id)
 
-    return cleaned_fragment_dir
+    return cleaned_outputs
+
 
 LaunchPlan(
     clean_workflow,
     "default",
     {
-        "run_id" : "demo",
-        "output_dir" : "demo",
-        "singlecell_file" : LatchFile("latch:///atac_outs/demo/outs/test_singlecell.csv"),
-        "positions_file" : LatchFile("latch:///spatials/demo/spatial/tissue_positions_list.csv"),
-        "fragments_file" : LatchFile("latch:///atac_outs/demo/outs/demo_fragments.tsv.gz"),
-        "deviations" : 2,
+        "samples": [
+            Sample(
+                run_id="demo",
+                output_dir="demo",
+                singlecell_file=LatchFile(
+                    "latch:///atac_outs/demo/outs/test_singlecell.csv"
+                ),
+                positions_file=LatchFile(
+                    "latch:///spatials/demo/spatial/tissue_positions_list.csv"
+                ),
+                fragments_file=LatchFile(
+                    "latch:///atac_outs/demo/outs/demo_fragments.tsv.gz"
+                ),
+                deviations=2,
+            )
+        ]
     },
 )
 
 if __name__ == "__main__":
-   clean_workflow(
-        run_id="demo",
-        output_dir="demo",
-        singlecell_file=LatchFile("latch:///atac_outs/demo/outs/test_singlecell.csv"),
-        positions_file=LatchFile("latch:///spatials/demo/spatial/tissue_positions_list.csv"),
-        fragments_file=LatchFile("latch:///atac_outs/demo/outs/demo_fragments.tsv.gz"),
-        deviations=2,
-        table_id = "400"
-    ) 
-
+    clean_workflow(
+        samples=[
+            Sample(
+                run_id="demo",
+                output_dir="demo",
+                singlecell_file=LatchFile(
+                    "latch:///atac_outs/demo/outs/test_singlecell.csv"
+                ),
+                positions_file=LatchFile(
+                    "latch:///spatials/demo/spatial/tissue_positions_list.csv"
+                ),
+                fragments_file=LatchFile(
+                    "latch:///atac_outs/demo/outs/demo_fragments.tsv.gz"
+                ),
+                deviations=2,
+            )
+        ],
+        table_id="761",
+    )
