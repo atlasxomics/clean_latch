@@ -8,11 +8,9 @@ from latch import workflow, map_task
 from latch.resources.launch_plan import LaunchPlan
 from latch.types import (
     LatchAuthor,
-    LatchDir,
     LatchFile,
     LatchMetadata,
     LatchParameter,
-    LatchRule,
 )
 
 from typing import List
@@ -28,11 +26,15 @@ metadata = LatchMetadata(
     license="MIT",
     parameters={
         "samples": LatchParameter(
-            display_name="Samples", description="List of samples", samplesheet=True
+            display_name="Samples",
+            description="List of samples",
+            samplesheet=True
         ),
         "table_id": LatchParameter(
             display_name="Registry Table ID",
-            description="Provide the ID of the Registry table. The cleaned fragment file will be populated in the table once the workflow finishes. (e.g. 761)",
+            description="Provide the ID of the Registry table. The cleaned \
+                fragment file will be populated in the table once the workflow \
+                finishes. (e.g. 761)",
             placeholder="761",
         ),
     },
@@ -42,12 +44,6 @@ metadata = LatchMetadata(
 
 @workflow(metadata)
 def clean_workflow(
-    # run_id: str,
-    # output_dir: str,
-    # singlecell_file: LatchFile,
-    # positions_file: LatchFile,
-    # fragments_file: LatchFile,
-    # deviations: int=1,
     samples: List[Sample],
     table_id: str = "761",
 ) -> List[CleaningOutput]:

@@ -106,7 +106,9 @@ def get_neighbors(current_value: int, repeat: List[int]) -> List[int]:
     return all_neighbors
 
 
-def multiple_degree(first_neighbors: List[int], degree: int, current: int) -> List[int]:
+def multiple_degree(
+    first_neighbors: List[int], degree: int, current: int
+) -> List[int]:
     current_neighbors = first_neighbors.copy()
     actual_degree = degree - 1
     for i in first_neighbors:

@@ -11,7 +11,9 @@ logging.basicConfig(format="%(levelname)s - %(asctime)s - %(message)s")
 
 
 @small_task(retries=0)
-def upload_registry_task(cleaned_outputs: List[CleaningOutput], table_id: str = "761"):
+def upload_registry_task(
+    cleaned_outputs: List[CleaningOutput], table_id: str = "761"
+):
     table = Table(table_id)
     try:
         with table.update() as updater:
