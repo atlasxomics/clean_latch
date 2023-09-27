@@ -7,3 +7,4 @@ CHANGELOG.md
 .latch_report.tar.gz
 .DS_Store
 tests/
+wf/.ipynb_checkpoints/
