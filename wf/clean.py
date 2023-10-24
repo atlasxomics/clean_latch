@@ -45,12 +45,13 @@ def filter_sc(singlecell_path: str, position_path: str) -> pd.DataFrame:
     dataframes, add -1 to positions, remove off tixels.
     """
     global number_of_channels
-    singlecell = pd.read_csv(singlecell_path, usecols=[0, 8]).drop(0, axis=0)
+    singlecell = pd.read_csv(singlecell_path, usecols=[0, 2]).drop(0, axis=0)
 
     positions = pd.read_csv(position_path, header=None, usecols=[0, 1, 2, 3])
     positions.columns = ["barcode", "on_off", "row", "col"]
     number_of_channels = math.sqrt(positions.shape[0])
-    positions["barcode"] = positions.loc[:, "barcode"].apply(lambda x: x + "-1")
+    positions["barcode"] = (positions.loc[:, "barcode"]
+                            .apply(lambda x: x + "-1"))
 
     merged = pd.merge(positions.astype(object), singlecell.astype(object))
     filtered = merged[merged["on_off"] == 1]
