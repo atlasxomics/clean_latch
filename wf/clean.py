@@ -202,12 +202,14 @@ def get_reductions(
     # Store rows/cols being downsampled in global variable
     bad_barcodes = singlecell["barcode"].values.tolist()
     downsampled_elements = set()
+    metric_elements = set()
 
     for i in bad_barcodes:
         correct_element = axisid_info.loc[axisid_info["barcode"] == i]
         convert_list = [[i, j] for i, j in correct_element.values.tolist()]
-        downsampled_elements.add(str(convert_list[0][1] + 1))  # +1 for 1-based
-    set_to_string = ", ".join(downsampled_elements)
+        metric_elements.add(str(convert_list[0][1] + 1))  # +1 for 1-based
+        downsampled_elements.add(str(convert_list[0][1]))
+    set_to_string = ", ".join(metric_elements)
     metrics_output[axis_id] = set_to_string
 
     # Add "adjust" column containing value to reduce reads to
