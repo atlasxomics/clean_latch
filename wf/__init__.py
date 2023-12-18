@@ -138,7 +138,7 @@ LaunchPlan(
                 run_id="demo",
                 output_dir="demo",
                 singlecell_file=LatchFile(
-                    "latch://13502.account/chromap_outputs/demo/Statistics/singlecell.csv"
+                    "latch:///chromap_outputs/demo/Statistics/singlecell.csv"
                 ),
                 positions_file=LatchFile(
                     "latch:///spatials/demo/spatial/tissue_positions_list.csv"
