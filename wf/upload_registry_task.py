@@ -3,7 +3,7 @@ import logging
 from latch import small_task
 from latch.types import LatchDir, LatchFile
 from latch.registry.table import Table
-from wf.cleaning_task import Sample, CleaningOutput
+from wf.cleaning_task import CleaningOutput
 
 from typing import List
 

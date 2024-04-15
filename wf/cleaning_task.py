@@ -4,7 +4,6 @@ import subprocess
 from latch import large_task
 from latch.types import LatchDir, LatchFile
 
-from typing import Optional
 from dataclasses import dataclass
 
 logging.basicConfig(
