@@ -266,8 +266,10 @@ def get_diag_reductions(
     cols_limit = col_mean + deviations * col_std
 
     # create table with only diagonal tixels from singlecell table
-    diag_sc = singlecell[singlecell["row"] == singlecell["col"]]
-    all_elem_ids = np.where(singlecell["row"] == singlecell["col"])[0].tolist()
+    diag_sc = singlecell[(singlecell["row"] == singlecell["col"]) | ((singlecell["row"] + singlecell["col"]) == (number_of_channels - 1))]
+    tl_diag = np.where(singlecell["row"] == singlecell["col"])[0].tolist()
+    tr_diag = np.where((singlecell["row"] + singlecell["col"]) == (number_of_channels - 1))[0].tolist()
+    all_elem_ids = tl_diag + tr_diag
     diag_mean = diag_sc["passed_filters"].mean()
 
     final_dataFrame = None
