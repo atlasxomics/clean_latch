@@ -44,8 +44,12 @@ def filter_sc(singlecell_path: str, position_path: str) -> pd.DataFrame:
     """Reformat data, remove headers, apply custom column names for
     dataframes, add -1 to positions, remove off tixels.
     """
+
     global number_of_channels
-    singlecell = pd.read_csv(singlecell_path, usecols=[0, 2]).drop(0, axis=0)
+
+    singlecell = pd.read_csv(singlecell_path, usecols=[0, 2])
+    if singlecell.iloc[0, 0] == "NO_BARCODE":
+        singlecell = singlecell.drop(0, axis=0)
 
     positions = pd.read_csv(position_path, header=None, usecols=[0, 1, 2, 3])
     positions.columns = ["barcode", "on_off", "row", "col"]
