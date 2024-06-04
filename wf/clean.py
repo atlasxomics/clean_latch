@@ -52,10 +52,9 @@ def filter_sc(singlecell_path: str, position_path: str) -> pd.DataFrame:
         singlecell = singlecell.drop(0, axis=0)
 
     positions = pd.read_csv(position_path, header=None, usecols=[0, 1, 2, 3])
-    positions.columns = ["barcode", "on_off", "row", "col"]
+    positions.columns = ["barcodes", "on_off", "row", "col"]
     number_of_channels = math.sqrt(positions.shape[0])
-    positions["barcode"] = (positions.loc[:, "barcode"]
-                            .apply(lambda x: x + "-1"))
+    positions["barcodes"] = positions.loc[:, "barcodes"].apply(lambda x: x + "-1")
 
     merged = pd.merge(positions.astype(object), singlecell.astype(object))
     filtered = merged[merged["on_off"] == 1]
@@ -164,7 +163,7 @@ def neighbors_reductions(
                 mean = singlecell.iloc[[i], [4]].values[0][0] * global_mean
         singlecell.iloc[[i], [5]] = mean
 
-    sliced = singlecell[["barcode", "adjust"]]
+    sliced = singlecell[["barcodes", "adjust"]]
     filtered = sliced[sliced["adjust"] != 0]
     return filtered
 
@@ -189,7 +188,7 @@ def get_reductions(
         pre_sort.sort()
         all_indexes[i] = statistics.median(pre_sort)
 
-    axisid_info = singlecell[["barcode", axis_id]]
+    axisid_info = singlecell[["barcodes", axis_id]]
     apply_medians = singlecell.loc[:, axis_id].apply(lambda x: all_indexes[x])
     singlecell["on_off"] = apply_medians
     og_singlecell = singlecell.copy()
@@ -204,12 +203,12 @@ def get_reductions(
     singlecell = singlecell[singlecell["on_off"] > upper_limit]
 
     # Store rows/cols being downsampled in global variable
-    bad_barcodes = singlecell["barcode"].values.tolist()
+    bad_barcodes = singlecell["barcodes"].values.tolist()
     downsampled_elements = set()
     metric_elements = set()
 
     for i in bad_barcodes:
-        correct_element = axisid_info.loc[axisid_info["barcode"] == i]
+        correct_element = axisid_info.loc[axisid_info["barcodes"] == i]
         convert_list = [[i, j] for i, j in correct_element.values.tolist()]
         metric_elements.add(str(convert_list[0][1] + 1))  # +1 for 1-based
         downsampled_elements.add(str(convert_list[0][1]))
@@ -290,7 +289,7 @@ def get_diag_reductions(
         metrics_output["down"] = "TRUE"
     else:
         diag_sc["adjust"] = diag_sc["passed_filters"]
-        final_dataFrame = diag_sc[["barcode", "adjust"]]
+        final_dataFrame = diag_sc[["barcodes", "adjust"]]
         metrics_output["down"] = "FALSE"
 
     return final_dataFrame
@@ -325,18 +324,18 @@ def clean_fragments(fragments_path: str, r_table: Dict[str, float]) -> pd.DataFr
     global metrics_output
     logging.info("Loading fragments.tsv")
     fragments = pd.read_csv(fragments_path, sep="\t", header=None, comment="#")
-    fragments.columns = ["V1", "V2", "V3", "barcode", "V4"]
+    fragments.columns = ["V1", "V2", "V3", "barcodes", "V4"]
     metrics_output["og"] = fragments.shape[0]
     frag_copy = fragments.copy()
     outlier_barcodes = list(r_table.keys())
 
     logging.info("Splitting fragments.tsv")
-    normal_frags = fragments[fragments["barcode"].isin(outlier_barcodes) == False]
-    outlier_frags = frag_copy[frag_copy["barcode"].isin(outlier_barcodes) == True]
+    normal_frags = fragments[fragments["barcodes"].isin(outlier_barcodes) == False]
+    outlier_frags = frag_copy[frag_copy["barcodes"].isin(outlier_barcodes) == True]
 
     # To each df in the list, randomly downsample if in reduction list
     logging.info("Downsampling....")
-    barcode_groups = outlier_frags.groupby("barcode")
+    barcode_groups = outlier_frags.groupby("barcodes")
     list_concat = []
     for i in outlier_barcodes:
         outlier = barcode_groups.get_group(i)
